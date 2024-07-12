@@ -65,7 +65,7 @@
 </dialog>
 
 <section class="overflow-x-auto">
-    <h1 class="text-xl sm:text-4xl">Wait List</h1>
+    <h1 class="text-xl sm:text-4xl">White List</h1>
 
     <table
         class="table table-xs"
@@ -84,7 +84,7 @@
             </tr>
         </thead>
         <tbody class="bg-base-100">
-            {% for ip in waitlist %}
+            {% for ip in whitelist %}
             <tr>
                 <th>{{forloop.counter}}</th>
                 <td>{{ip.tanggal}}</td>
