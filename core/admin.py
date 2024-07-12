@@ -6,6 +6,9 @@ class BannedIpAdmin(admin.ModelAdmin):
 
 class IdpsLogAdmin(admin.ModelAdmin):
     list_display = ('tanggal', 'waktu','message', 'service', 'ip' )
+class SSHSuccessAdmin(admin.ModelAdmin):
+    list_display = ('tanggal', 'waktu','protocol', 'user_login', 'ip','port' )
 
 admin.site.register(IDPSLog, IdpsLogAdmin)
 admin.site.register(BannedIP,BannedIpAdmin)
+admin.site.register(SSHSuccess,SSHSuccessAdmin)
