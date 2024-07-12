@@ -36,7 +36,7 @@ class SSHSuccess(models.Model):
     port = models.CharField(max_length=10)
     ip = models.GenericIPAddressField()
     def __str__(self):
-        return f"SSH Threshold {self.th_ssh},Flood Threshold {self.th_flood} "
+        return f"{self.ip}{self.port} "
 
 class Config(models.Model):
     th_ssh = models.IntegerField(default=5)
