@@ -47,13 +47,13 @@ def deleteBannedIp(request,pk):
     return redirect('bannedip')
     
 
-class WaitListView(ListView):
-    template_name = "waitlist.html"
-    model = WaitList
-    context_object_name = "waitlist"
+class WhiteListView(ListView):
+    template_name = "whitelist.html"
+    model = WhiteList
+    context_object_name = "whitelist"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = "waitlist"
+        context["title"] = "whitelist"
         return context
     def post(self, request, *args, **kwargs):
         # Ambil data POST yang dikirimkan oleh pengguna
@@ -62,7 +62,7 @@ class WaitListView(ListView):
         
 
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
-        WaitList.objects.create(service=service, ip=ip)
+        WhiteList.objects.create(service=service, ip=ip)
 
         # Ambil ulang data yang akan ditampilkan dalam ListView setelah penambahan
         queryset = self.get_queryset()
@@ -71,7 +71,7 @@ class WaitListView(ListView):
     
 
 def deleteWaitList(request,pk):
-    bannedip = WaitList.objects.get(pk=pk)    
+    bannedip = WhiteList.objects.get(pk=pk)    
     bannedip.delete()
-    return redirect('waitlist')
+    return redirect('whitelist')
     

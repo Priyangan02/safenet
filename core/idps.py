@@ -9,7 +9,7 @@ from scapy.all import sniff, IP, TCP, UDP, ICMP
 from django.utils import timezone
 import django
 from django.conf import settings
-from idps.models import IDPSLog, BannedIP, Whitelist, SSHSuccess, Config
+from .models import IDPSLog, BannedIP, WhiteList, SSHSuccess, Config
 
 django.setup()
 
@@ -52,8 +52,8 @@ def packet_callback(packet):
     if IP in packet:
         ip_src = packet[IP].src
 
-        # Bypass IPs in whitelist
-        if Whitelist.objects.filter(ip=ip_src).exists():
+        # Bypass IPs in WhiteList
+        if WhiteList.objects.filter(ip=ip_src).exists():
             return
 
         current_time = time.time()
