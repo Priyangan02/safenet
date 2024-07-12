@@ -112,7 +112,7 @@ def monitor_ssh_log():
             elif "Accepted password" in line or "Accepted publickey" in line:
                 ip = line.split()[-4]
                 user = line.split()[8] if "Accepted password" in line else line.split()[10]
-                port = line.split()[-1]
+                port = line.split()[-2]
                 logging.info(f"Successful SSH login from {ip}")
                 save_successful_login(ip, user, port, "SSH")
 
