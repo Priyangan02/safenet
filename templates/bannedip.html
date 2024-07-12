@@ -1,0 +1,134 @@
+{% extends '_base.html' %} {% block body %}
+<!-- Open the modal using ID.showModal() method -->
+<button
+    class="btn btn-success"
+    onclick="my_modal_1.showModal()">
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="w-4 h-4"
+        viewBox="0 0 24 24">
+        <path
+            fill="currentColor"
+            d="M11 13v3q0 .425.288.713T12 17t.713-.288T13 16v-3h3q.425 0 .713-.288T17 12t-.288-.712T16 11h-3V8q0-.425-.288-.712T12 7t-.712.288T11 8v3H8q-.425 0-.712.288T7 12t.288.713T8 13zm-6 8q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14V5H5zM5 5v14z" />
+    </svg>
+    Tambah Data
+</button>
+<dialog
+    id="my_modal_1"
+    class="modal">
+    <div class="modal-box">
+        <form
+            method="post"
+            class="flex flex-col gap-4">
+            {% csrf_token %}
+            <h3 class="font-bold text-lg">Tambah Data Banned Ip</h3>
+            <label class="input input-bordered flex items-center gap-2">
+                <input
+                    name="ip"
+                    type="text"
+                    required
+                    class="grow"
+                    minlength="7"
+                    maxlength="15"
+                    size="15"
+                    pattern="^((\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$"
+                    placeholder="Ip Address" />
+            </label>
+            <select
+                required
+                class="select select-bordered w-full"
+                name="service">
+                <option
+                    disabled
+                    selected>
+                    Service
+                </option>
+                <option value="sshd">SSHD</option>
+                <option value="tcpip">TCPIP</option>
+                <option value="udp">UDP</option>
+                <option value="icmp">ICMP</option>
+            </select>
+            <button
+                type="submit"
+                class="btn btn-success">
+                Tambah Data
+            </button>
+        </form>
+        <p class="py-4">Press ESC key or click the button below to close</p>
+        <div class="modal-action">
+            <form method="dialog">
+                <!-- if there is a button in form, it will close the modal -->
+                <button class="btn">Close</button>
+            </form>
+        </div>
+    </div>
+</dialog>
+
+<section class="overflow-x-auto">
+    <h1 class="text-xl sm:text-4xl">Banned IP Address List</h1>
+
+    <table
+        class="table table-xs"
+        id="myTable">
+        <thead>
+            {% comment %}
+            <tr></tr>
+            {% endcomment %}
+            <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>Service</th>
+                <th>Ip</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody class="bg-base-100">
+            {% for ip in bannedip %}
+            <tr>
+                <th>{{forloop.counter}}</th>
+                <td>{{ip.tanggal}}</td>
+                <td>{{ip.waktu|date:"H:i" }}</td>
+                <td>{{ip.service}}</td>
+                <td>{{ip.ip}}</td>
+                <td class="flex gap-2">
+                    <button class="btn btn-circle btn-warning btn-xs">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24">
+                            <path
+                                fill="currentColor"
+                                d="M5 19h1.425L16.2 9.225L14.775 7.8L5 17.575zm-2 2v-4.25L16.2 3.575q.3-.275.663-.425t.762-.15t.775.15t.65.45L20.425 5q.3.275.438.65T21 6.4q0 .4-.137.763t-.438.662L7.25 21zM19 6.4L17.6 5zm-3.525 2.125l-.7-.725L16.2 9.225z" />
+                        </svg>
+                    </button>
+                    <a
+                        href="{% url 'delete_bannedip' ip.id %}"
+                        class="btn btn-circle btn-error btn-xs">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-4 w-4"
+                            viewBox="0 0 24 24">
+                            <path
+                                fill="currentColor"
+                                d="m9.4 16.5l2.6-2.6l2.6 2.6l1.4-1.4l-2.6-2.6L16 9.9l-1.4-1.4l-2.6 2.6l-2.6-2.6L8 9.9l2.6 2.6L8 15.1zM7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM7 6v13z" />
+                        </svg>
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th></th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>Service</th>
+                <th>Ip</th>
+                <th>Action</th>
+            </tr>
+        </tfoot>
+    </table>
+</section>
+
+{% endblock body %}

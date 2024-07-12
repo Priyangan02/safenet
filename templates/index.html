@@ -1,0 +1,48 @@
+{% extends '_base.html' %} {% block body %}
+<!-- Open the modal using ID.showModal() method -->
+
+<section class="overflow-x-auto">
+    <h1 class="text-xl sm:text-4xl">IDPS Log</h1>
+
+    <table
+        class="table table-xs"
+        id="myTable">
+        <thead>
+            {% comment %}
+            <tr></tr>
+            {% endcomment %}
+            <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>Service</th>
+                <th>Message</th>
+                <th>Ip</th>
+            </tr>
+        </thead>
+        <tbody class="bg-base-100">
+            {% for ip in idpslog %}
+            <tr>
+                <th>{{forloop.counter}}</th>
+                <td>{{ip.tanggal}}</td>
+                <td>{{ip.waktu|date:"H:i" }}</td>
+                <td>{{ip.service}}</td>
+                <td>{{ip.message}}</td>
+                <td>{{ip.ip}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th></th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>Service</th>
+                <th>Message</th>
+                <th>Ip</th>
+            </tr>
+        </tfoot>
+    </table>
+</section>
+
+{% endblock body %}
