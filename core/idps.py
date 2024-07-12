@@ -9,9 +9,16 @@ from scapy.all import sniff, IP, TCP, UDP, ICMP
 from django.utils import timezone
 import django
 from django.conf import settings
-from .models import IDPSLog, BannedIP, WhiteList, SSHSuccess, Config
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safenet.settings')
 
+# Add the project directory to the Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
+# Initialize Django
 django.setup()
+
+from core.models import IDPSLog, BannedIP, WhiteList, SSHSuccess, Config
 
 # Konfigurasi logging
 logging.basicConfig(filename="/var/log/idps.log", level=logging.INFO, format="%(asctime)s - %(message)s")
