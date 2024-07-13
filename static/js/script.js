@@ -1,5 +1,5 @@
 
-document.addEventListener('DOMContentLoaded', ()=> {
+document.addEventListener('DOMContentLoaded', () => {
     const themeCheckBox = document.querySelector('.theme-controller');
 
     //ambil data dari local storage
@@ -11,14 +11,14 @@ document.addEventListener('DOMContentLoaded', ()=> {
         localStorage.setItem('theme', newTheme);
         document.body.setAttribute('data-theme', newTheme);
     });
-     
+
     const table = document.getElementById('myTable');
 
     $('#myTable').DataTable({
-        // responsive: true
+        order: [[4, 'desc']]
     });
-    
- 
-    
-   
+
+
+
+
 })

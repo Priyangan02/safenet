@@ -4,13 +4,77 @@
         <h2 class="card-title">IDPS</h2>
         <p>Intrusion Detection and Prevention System</p>
         <div class="flex justify-center gap-5 flex-row flex-nowrap">
-            <button class="btn w-full btn-success">Enable</button>
-            <button class="btn w-full btn-error">Disable</button>
+            <button id='enableButton' class="btn w-full btn-success">Enable</button>
+            <button id='disableButton' class="btn w-full btn-error">Disable</button>
         </div>
-        <p>Status: <span class="text-success">Active</span></p>
+        <p>Status: <b class="text-success" id='status'>Active</b></p>
         <div class="flex w-full flex-col">
             <div class="divider divider-neutral">Config</div>
         </div>
     </div>
 </section>
+<script>
+        $(document).ready(function(){
+            let status = JSON.parse(localStorage.getItem('active'));
+            $('#status').text(status?'Active':'Disabled')
+            $( "#status" ).toggleClass( 'text-success', 'text-error' );
+            $("#enableButton").prop('disabled', status);
+            $("#disableButton").prop('disabled', !status);
+        })
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie('csrftoken');
+
+        
+        function handleButtonClick(buttonType) {
+            $.ajax({
+                url: "{% url 'config' %}",
+                type: "POST",
+                data: JSON.stringify({button_type: buttonType}),
+                contentType: "application/json",
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-CSRFToken', csrftoken);
+                },
+                success: function(response) {
+                    console.log(response);
+                    localStorage.setItem('active', response.active);
+                    $('#status').text(response.active?'Active':'Disabled')
+                    $( "#status" ).toggleClass( 'text-success', 'text-error' );
+                    $("#enableButton").prop('disabled', response.active);
+                    $("#disableButton").prop('disabled', !response.active);
+                    console.log(status)
+                    
+                     
+                },
+                error: function(response) {
+                    console.log(response);
+                    
+                }
+                
+            });
+        }
+
+        document.getElementById("enableButton").addEventListener("click", function() {
+            handleButtonClick('enable');
+            
+        });
+
+        document.getElementById("disableButton").addEventListener("click", function() {
+            handleButtonClick('disable');
+            
+        });
+    </script>
 {% endblock body %}

@@ -1,0 +1,49 @@
+{% extends '_base.html' %} {% block body %}
+<!-- Open the modal using ID.showModal() method -->
+
+<section class="overflow-x-auto">
+    <h1 class="text-xl sm:text-4xl">IDPS Log</h1>
+
+    <table
+        class="table table-xs"
+        id="myTable">
+        <thead>
+            {% comment %}
+            <tr></tr>
+            {% endcomment %}
+            <tr>
+                <th>No</th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>User</th>
+                <th>Ip</th>
+                <th>Port</th>
+            </tr>
+        </thead>
+        <tbody class="bg-base-100">
+            {% for ip in sshsuccess %}
+            <tr>
+                <th>{{forloop.counter}}</th>
+                <td>{{ip.tanggal}}</td>
+                <td>{{ip.waktu|date:"H:i" }}</td>
+                <td>{{ip.user_login}}</td>
+                <td>{{ip.ip}}</td>
+                <td>{{ip.port}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th></th>
+                <th>Tanggal</th>
+                <th>Waktu</th>
+                <th>User</th>
+                <th>Ip</th>
+                <th>Port</th>
+            </tr>
+        </tfoot>
+    </table>
+</section>
+
+{% endblock body %}
+
