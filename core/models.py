@@ -1,5 +1,6 @@
 from django.db import models
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 # Create your models here.
 
 class IDPSLog(models.Model):
@@ -11,8 +12,7 @@ class IDPSLog(models.Model):
 
     def __str__(self):
         return f"{self.ip} - {self.service} on {self.tanggal} at {self.waktu}"
-class BannedIP(models.Model):
-    
+class BannedIP(models.Model):    
     tanggal = models.DateField(auto_now_add=True)
     waktu = models.TimeField(auto_now_add=True)
     service = models.CharField(max_length=100)
@@ -38,7 +38,13 @@ class SSHSuccess(models.Model):
     ip = models.GenericIPAddressField()
     def __str__(self):
         return f"{self.ip}{self.port} "
-
+@receiver(post_save, sender=WhiteList)
+def update_whitelist(sender, instance, created, **kwargs):
+    if created:
+        # Cari IP yang sama di BannedIP dan hapus jika ditemukan
+        duplicate_banned_ips = BannedIP.objects.filter(ip=instance.ip)
+        if duplicate_banned_ips.exists():
+            duplicate_banned_ips.delete()
 class Config(models.Model):
     th_ssh = models.IntegerField(default=5)
     th_flood = models.IntegerField(default=1000)

@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from .models import *
 from django.views.generic import ListView,TemplateView
 import json
+import logging
+from subprocess import CalledProcessError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -59,6 +61,12 @@ class BannedIpView(ListView):
         ip = request.POST.get('ip', '')
         service = request.POST.get('service', '')
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
+        try:
+            subprocess.check_call(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+        except CalledProcessError as e:
+            # Tangani kesalahan saat perintah iptables gagal
+            logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+            # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
         BannedIP.objects.create(service=service, ip=ip)
 
         # Ambil ulang data yang akan ditampilkan dalam ListView setelah penambahan
@@ -88,7 +96,12 @@ class WhiteListView(ListView):
         ip = request.POST.get('ip', '')
         service = request.POST.get('service', '')
         
-
+        try:
+            subprocess.check_call(["iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
+        except CalledProcessError as e:
+            # Tangani kesalahan saat perintah iptables gagal
+            logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+            # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
         WhiteList.objects.create(service=service, ip=ip)
 

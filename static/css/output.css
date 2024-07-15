@@ -1003,13 +1003,6 @@ html {
   flex-grow: 1;
 }
 
-.card-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
 .card figure {
   display: flex;
   align-items: center;
@@ -1084,14 +1077,6 @@ html {
   --tw-content: '';
   content: var(--tw-content);
   background-color: var(--fallback-bc,oklch(var(--bc)/0.1));
-}
-
-.divider-start:before {
-  display: none;
-}
-
-.divider-end:after {
-  display: none;
 }
 
 .drawer {
@@ -2924,6 +2909,10 @@ html:has(.drawer-toggle:checked) {
   width: 100%;
 }
 
+.max-w-\[1080px\] {
+  max-width: 1080px;
+}
+
 .max-w-sm {
   max-width: 24rem;
 }
@@ -2962,10 +2951,6 @@ html:has(.drawer-toggle:checked) {
 
 .items-center {
   align-items: center;
-}
-
-.justify-end {
-  justify-content: flex-end;
 }
 
 .justify-center {
@@ -3080,6 +3065,11 @@ html:has(.drawer-toggle:checked) {
 .text-base-content {
   --tw-text-opacity: 1;
   color: var(--fallback-bc,oklch(var(--bc)/var(--tw-text-opacity)));
+}
+
+.text-error {
+  --tw-text-opacity: 1;
+  color: var(--fallback-er,oklch(var(--er)/var(--tw-text-opacity)));
 }
 
 .text-neutral-content {
