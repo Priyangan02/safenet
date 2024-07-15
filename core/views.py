@@ -116,7 +116,7 @@ def deleteWaitList(request,pk):
     bannedip.delete()
     return redirect('whitelist')
     
-import subprocess
+
 
 def enable_service():
     try:
