@@ -40,7 +40,7 @@ def save_log(message, ip, service):
     IDPSLog.objects.create(service=service, message=message, ip=ip)
 
 def save_blocked_ip(ip, service):
-    BannedIP.objects.create(id_idpslog=log, service=service, ip=ip)
+    BannedIP.objects.create( service=service, ip=ip)
 
 def save_successful_login(ip, user, port, protocol):
     log = IDPSLog.objects.create(service="SSH", message=f"Successful SSH login from {ip}", ip=ip)

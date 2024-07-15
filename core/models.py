@@ -12,6 +12,7 @@ class IDPSLog(models.Model):
     def __str__(self):
         return f"{self.ip} - {self.service} on {self.tanggal} at {self.waktu}"
 class BannedIP(models.Model):
+    
     tanggal = models.DateField(auto_now_add=True)
     waktu = models.TimeField(auto_now_add=True)
     service = models.CharField(max_length=100)
