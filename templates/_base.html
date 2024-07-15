@@ -21,15 +21,17 @@
         <script
             type="module"
             src="{% static 'js/script.js' %}"></script>
-            <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"></script>
+            
+
+             <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <!-- DataTables JS -->
+        <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
     </head>
     <body
         class="min-h-screen"
         data-theme="light">
         {% include '_navbar.html' %}
         <main class="container m-auto">{% block body %} {% endblock body %}</main>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <!-- DataTables JS -->
-        <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+       
     </body>
 </html>

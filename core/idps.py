@@ -40,7 +40,6 @@ def save_log(message, ip, service):
     IDPSLog.objects.create(service=service, message=message, ip=ip)
 
 def save_blocked_ip(ip, service):
-    log = IDPSLog.objects.create(service=service, message=f"Blocked IP {ip}", ip=ip)
     BannedIP.objects.create(id_idpslog=log, service=service, ip=ip)
 
 def save_successful_login(ip, user, port, protocol):
@@ -52,8 +51,21 @@ def block_ip(ip, service):
         subprocess.check_call(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
         logging.info(f"Blocked IP {ip}")
         save_blocked_ip(ip, service)
+        save_iptables_rules()
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to block IP {ip}: {str(e)}")
+
+def save_iptables_rules():
+    try:
+        subprocess.check_call(["iptables-save", "-f", "/etc/iptables/rules.v4"])
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to save iptables rules: {str(e)}")
+
+def restore_iptables_rules():
+    try:
+        subprocess.check_call(["iptables-restore", "/etc/iptables/rules.v4"])
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to restore iptables rules: {str(e)}")
 
 def packet_callback(packet):
     if IP in packet:
@@ -119,6 +131,7 @@ def monitor_ssh_log():
 def main():
     print("Starting packet capture and SSH log monitoring. Press Ctrl+C to stop.")
     try:
+        restore_iptables_rules()
         sniff(prn=packet_callback, store=0)
     except KeyboardInterrupt:
         print("Packet capture stopped.")

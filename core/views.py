@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 class IndexView(ListView):
     model = IDPSLog
     context_object_name ='idpslog'
-    ordering = ['-tanggal']
+    ordering = ['-tanggal','-waktu']
     template_name = "index.html"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -18,7 +18,7 @@ class SSHSuccessView(ListView):
     model = SSHSuccess
     context_object_name ='sshsuccess'
     template_name = "sshsuccess.html"
-    ordering = ['-tanggal']
+    ordering = ['-tanggal','-waktu']
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "SSH Sussess"
@@ -48,7 +48,7 @@ class BannedIpView(ListView):
     template_name="bannedip.html"
     model = BannedIP
     context_object_name = "bannedip"
-    ordering = ['-tanggal']
+    ordering = ['-tanggal','-waktu']
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "Banned Ip"
@@ -78,7 +78,7 @@ class WhiteListView(ListView):
     template_name = "whitelist.html"
     model = WhiteList
     context_object_name = "whitelist"
-    ordering = ['-tanggal']
+    ordering = ['-tanggal','-waktu']
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "whitelist"
