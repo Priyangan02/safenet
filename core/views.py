@@ -113,8 +113,16 @@ class WhiteListView(ListView):
     
 
 def deleteWaitList(request,pk):
-    bannedip = WhiteList.objects.get(pk=pk)    
-    bannedip.delete()
+    try:
+        subprocess.check_call(["iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
+        bannedip = WhiteList.objects.get(pk=pk)    
+        bannedip.delete()
+    except CalledProcessError as e:
+        # Tangani kesalahan saat perintah iptables gagal
+        logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+        # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
+    
+    
     return redirect('whitelist')
     
 
