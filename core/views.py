@@ -3,6 +3,7 @@ from .models import *
 from django.views.generic import ListView,TemplateView
 import json
 import logging
+import subprocess
 from subprocess import CalledProcessError
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
