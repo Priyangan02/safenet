@@ -149,7 +149,7 @@ def enable_service():
 def disable_service():
     try:
         # Command to be executed
-        command = ['sudo', 'systemctl', 'stop', '--now', 'idps.service']
+        command = ['systemctl', 'stop', '--now', 'idps.service']
         
         # Running the command
         result = subprocess.run(command, check=True, text=True, capture_output=True)
