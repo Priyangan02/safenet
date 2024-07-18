@@ -49,7 +49,7 @@ def save_successful_login(ip, user, port, protocol):
 
 def ip_already_blocked(ip):
     try:
-        subprocess.check_call(["iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"])
+        subprocess.check_call(["sudo","iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"])
         return True
     except subprocess.CalledProcessError:
         return False
@@ -65,7 +65,7 @@ def block_ip(ip, service):
         return
     
     try:
-        subprocess.check_call(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+        subprocess.check_call(["sudo","iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
         logging.info(f"Blocked IP {ip}")
         save_blocked_ip(ip, service)
         save_iptables_rules()
@@ -74,13 +74,13 @@ def block_ip(ip, service):
 
 def save_iptables_rules():
     try:
-        subprocess.check_call(["iptables-save", "-f", "/etc/iptables/rules.v4"])
+        subprocess.check_call(["sudo", "iptables-save", "-f", "/etc/iptables/rules.v4"])
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to save iptables rules: {str(e)}")
 
 def restore_iptables_rules():
     try:
-        subprocess.check_call(["iptables-restore", "/etc/iptables/rules.v4"])
+        subprocess.check_call(["sudo", "iptables-restore", "/etc/iptables/rules.v4"])
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to restore iptables rules: {str(e)}")
 

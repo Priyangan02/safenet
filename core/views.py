@@ -63,7 +63,7 @@ class BannedIpView(ListView):
         service = request.POST.get('service', '')
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
         try:
-            subprocess.check_call(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+            subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
         except CalledProcessError as e:
             # Tangani kesalahan saat perintah iptables gagal
             logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
@@ -98,8 +98,8 @@ class WhiteListView(ListView):
         service = request.POST.get('service', '')
         
         try:
-            subprocess.check_call(["iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
-            subprocess.check_call(["iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
+            subprocess.check_call(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
+            subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
         except CalledProcessError as e:
             # Tangani kesalahan saat perintah iptables gagal
             logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
@@ -117,7 +117,7 @@ def deleteWaitList(request,pk):
     try:
         whitelist = WhiteList.objects.get(pk=pk)    
         ip = whitelist.ip
-        subprocess.run(["iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
+        subprocess.run(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
         
         whitelist.delete()
     except CalledProcessError as e:
@@ -133,7 +133,7 @@ def deleteWaitList(request,pk):
 def enable_service():
     try:
         # Command to be executed
-        command = ['systemctl', 'enable', '--now', 'idps.service']
+        command = ['sudo','systemctl', 'enable', '--now', 'idps.service']
         
         # Running the command
         result = subprocess.run(command, check=True, text=True, capture_output=True)
@@ -149,7 +149,7 @@ def enable_service():
 def disable_service():
     try:
         # Command to be executed
-        command = ['systemctl', 'stop', '--now', 'idps.service']
+        command = ['sudo', 'systemctl', 'stop', '--now', 'idps.service']
         
         # Running the command
         result = subprocess.run(command, check=True, text=True, capture_output=True)
