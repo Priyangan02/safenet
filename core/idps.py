@@ -10,6 +10,7 @@ from django.utils import timezone
 import django
 from django.conf import settings
 import os
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safenet.settings')
 
 # Add the project directory to the Python path
@@ -40,13 +41,29 @@ def save_log(message, ip, service):
     IDPSLog.objects.create(service=service, message=message, ip=ip)
 
 def save_blocked_ip(ip, service):
-    BannedIP.objects.create( service=service, ip=ip)
+    BannedIP.objects.create(service=service, ip=ip)
 
 def save_successful_login(ip, user, port, protocol):
     log = IDPSLog.objects.create(service="SSH", message=f"Successful SSH login from {ip}", ip=ip)
     SSHSuccess.objects.create(id_idpslog=log, protocol=protocol, user_login=user, port=port, ip=ip)
 
+def ip_already_blocked(ip):
+    try:
+        subprocess.check_call(["iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"])
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
 def block_ip(ip, service):
+    # Bypass IPs in WhiteList
+    if WhiteList.objects.filter(ip=ip).exists():
+        logging.info(f"IP {ip} is in whitelist, skipping block.")
+        return
+    
+    if ip_already_blocked(ip):
+        logging.info(f"IP {ip} already blocked, skipping.")
+        return
+    
     try:
         subprocess.check_call(["iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
         logging.info(f"Blocked IP {ip}")
@@ -112,8 +129,14 @@ def monitor_ssh_log():
     with subprocess.Popen(['tail', '-F', ssh_logfile], stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
         for line in p.stdout:
             line = line.decode('utf-8')
+            ip = None
+            user = None
+            port = None
+
             if "Failed password" in line:
                 ip = line.split()[-4]
+                if WhiteList.objects.filter(ip=ip).exists():
+                    continue
                 ssh_brute_force[ip] += 1
                 logging.info(f"Failed SSH login attempt from {ip}")
                 save_log("Failed SSH login attempt", ip, "SSH")
@@ -125,7 +148,10 @@ def monitor_ssh_log():
                 ip = line.split()[-4]
                 user = line.split()[8] if "Accepted password" in line else line.split()[10]
                 port = line.split()[-2]
-                logging.info(f"Successful SSH login from {ip}")
+                if WhiteList.objects.filter(ip=ip).exists():
+                    logging.info(f"Successful SSH login from whitelisted IP {ip}")
+                else:
+                    logging.info(f"Successful SSH login from {ip}")
                 save_successful_login(ip, user, port, "SSH")
 
 def main():
@@ -147,3 +173,4 @@ threading.Thread(target=monitor_ssh_log, daemon=True).start()
 
 if __name__ == "__main__":
     main()
+
