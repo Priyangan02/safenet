@@ -99,6 +99,7 @@ class WhiteListView(ListView):
         
         try:
             subprocess.check_call(["iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
+            subprocess.check_call(["iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
         except CalledProcessError as e:
             # Tangani kesalahan saat perintah iptables gagal
             logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
@@ -114,9 +115,11 @@ class WhiteListView(ListView):
 
 def deleteWaitList(request,pk):
     try:
-        subprocess.check_call(["iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
-        bannedip = WhiteList.objects.get(pk=pk)    
-        bannedip.delete()
+        whitelist = WhiteList.objects.get(pk=pk)    
+        ip = whitelist.ip
+        subprocess.run(["iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
+        
+        whitelist.delete()
     except CalledProcessError as e:
         # Tangani kesalahan saat perintah iptables gagal
         logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
@@ -130,7 +133,7 @@ def deleteWaitList(request,pk):
 def enable_service():
     try:
         # Command to be executed
-        command = ['sudo', 'systemctl', 'enable', '--now', 'idps.service']
+        command = ['systemctl', 'enable', '--now', 'idps.service']
         
         # Running the command
         result = subprocess.run(command, check=True, text=True, capture_output=True)
