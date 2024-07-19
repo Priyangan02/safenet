@@ -3,6 +3,7 @@ from .models import *
 from django.views.generic import ListView,TemplateView
 import json
 import logging
+from django.contrib.auth.mixins import LoginRequiredMixin
 import subprocess
 from subprocess import CalledProcessError
 from django.http import JsonResponse
@@ -27,7 +28,7 @@ class SSHSuccessView(ListView):
         context["title"] = "SSH Sussess"
         return context
 @method_decorator(csrf_exempt, name='dispatch')
-class ConfigView(TemplateView):
+class ConfigView(LoginRequiredMixin,TemplateView):
     template_name = "config.html"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

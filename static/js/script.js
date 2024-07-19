@@ -12,7 +12,10 @@ $(document).ready(function () {
         document.body.setAttribute('data-theme', newTheme);
     });
     $('#myTable').DataTable({
-        order: false
+        "order": false,
+        "columnDefs": [
+            { "className": "dt-center", "targets": "_all" }
+        ],
     });
 
 
