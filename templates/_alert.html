@@ -1,0 +1,30 @@
+
+<style>
+    /* CSS khusus untuk memastikan SweetAlert berada di lapisan paling atas */
+    .swal2-container {
+        z-index: 9999 !important;
+    }
+
+</style>
+<script>
+    {% if messages %}
+        const Toast = Swal.mixin({
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
+        {% for message in messages %}
+            Toast.fire({
+                icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+                title: "{{ message }}"
+            });
+        {% endfor %}
+    {% endif %}
+</script>

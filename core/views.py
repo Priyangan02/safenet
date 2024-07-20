@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import *
 from django.views.generic import ListView,TemplateView
 import json
@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 import subprocess
 from subprocess import CalledProcessError
 from django.http import JsonResponse
+from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 class IndexView(ListView):
@@ -32,7 +33,9 @@ class ConfigView(LoginRequiredMixin,TemplateView):
     template_name = "config.html"
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = "Config"
+        context["title"] = "Config" 
+        config = Config.objects.first()  # Misalnya, ambil konfigurasi pertama
+        context["config"] = config
         return context
 
     def post(self, request, *args, **kwargs):
@@ -47,6 +50,30 @@ class ConfigView(LoginRequiredMixin,TemplateView):
             print("Disable button clicked")
             active = False
         return JsonResponse({'status': 'success','active':active})
+def updateConfig(request, pk):
+    config = get_object_or_404(Config, id=pk)
+    
+    if request.method == "POST":
+        th_ssh = request.POST.get('th_ssh')
+        th_flood = request.POST.get('th_flood')
+        
+        # Validasi sederhana
+        if th_ssh and th_flood:
+            try:
+                config.th_ssh = int(th_ssh)
+                config.th_flood = int(th_flood)
+                config.save()
+                messages.success(request, "Konfigurasi berhasil diperbarui.")
+                return redirect('config')  # Pastikan ada view config_detail yang sesuai
+            except ValueError:
+                # Tangani kasus jika nilai yang dimasukkan bukan integer
+                messages.error(request, "Konfigurasi gagal diperbarui.")
+                return HttpResponse("Nilai harus berupa angka.")
+        else:
+            messages.error(request, "Pastikan semua data telah terisi.")
+            return redirect('config')  # Pastikan ada view config_detail yang sesuai
+        
+    
 
 class BannedIpView(ListView):
     template_name="bannedip.html"
@@ -65,11 +92,13 @@ class BannedIpView(ListView):
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
         try:
             subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+            BannedIP.objects.create(service=service, ip=ip)
+            messages.success(request, "Banned IP berhasil ditambahkan.")
         except CalledProcessError as e:
             # Tangani kesalahan saat perintah iptables gagal
+            messages.error(request, "Banned IP gagal ditambahkan.")
             logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
             # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
-        BannedIP.objects.create(service=service, ip=ip)
 
         # Ambil ulang data yang akan ditampilkan dalam ListView setelah penambahan
         queryset = self.get_queryset()
@@ -81,6 +110,7 @@ def deleteBannedIp(request,pk):
     bannedip = BannedIP.objects.get(pk=pk)
     BannedIP.objects.get(pk=pk)
     bannedip.delete()
+    messages.success(request, "Banned IP berhasil dihapus.")
     return redirect('bannedip')
     
 
@@ -105,9 +135,10 @@ class WhiteListView(ListView):
             # Tangani kesalahan saat perintah iptables gagal
             logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
             # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
+            
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
         WhiteList.objects.create(service=service, ip=ip)
-
+        messages.success(request, "White IP berhasil ditambahkan.")
         # Ambil ulang data yang akan ditampilkan dalam ListView setelah penambahan
         queryset = self.get_queryset()
         context = self.get_context_data(object_list=queryset)
@@ -121,9 +152,11 @@ def deleteWaitList(request,pk):
         subprocess.run(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
         
         whitelist.delete()
+        messages.success(request, "White IP berhasil dihapus.")
     except CalledProcessError as e:
         # Tangani kesalahan saat perintah iptables gagal
         logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+        messages.error(request, "White IP gagal dihapus.")
         # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
     
     

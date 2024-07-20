@@ -8,6 +8,7 @@
             name="viewport"
             content="width=device-width, initial-scale=1.0" />
         <title>Safe Net | {% block title %}{{title}} {% endblock title %}</title>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <link
             rel="stylesheet"
             href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.css" />
@@ -29,7 +30,7 @@
     </head>
     <body
         class="min-h-screen"
-        data-theme="light">
+        data-theme="bumbleebee">
         {% include '_navbar.html' %}
         <main class="container max-w-[1080px] m-auto">{% block body %} {% endblock body %}</main>
        

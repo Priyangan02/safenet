@@ -23,7 +23,7 @@
             method="post"
             class="flex flex-col gap-4">
             {% csrf_token %}
-            <h3 class="font-bold text-lg">Tambah Wait List</h3>
+            <h3 class="font-bold text-lg">Tambah White List</h3>
             <label class="input input-bordered flex items-center gap-2">
                 <input
                     name="ip"
@@ -67,6 +67,7 @@
 </dialog>
 
 <section class="overflow-x-auto">
+    {% include '_alert.html' %}
     <h1 class="text-xl sm:text-4xl">White List</h1>
 
     <table
