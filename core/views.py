@@ -18,6 +18,9 @@ class IndexView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["title"] = "Home"
+        context["banned_count"] = BannedIP.objects.count()
+        context["success_count"] = SSHSuccess.objects.count()
+        context["white_count"] = WhiteList.objects.count()
         return context
 class SSHSuccessView(ListView):
     model = SSHSuccess
@@ -135,7 +138,7 @@ class WhiteListView(ListView):
             # Tangani kesalahan saat perintah iptables gagal
             logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
             # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
-            
+
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
         WhiteList.objects.create(service=service, ip=ip)
         messages.success(request, "White IP berhasil ditambahkan.")

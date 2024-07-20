@@ -1,0 +1,28 @@
+{% load static %}
+<head>
+    <meta charset="UTF-8" />
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0" />
+    <title>Safe Net | {% block title %}{{title}} {% endblock title %}</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link
+        rel="stylesheet"
+        href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.css" />
+    <link
+        rel="stylesheet"
+        href="https://cdn.datatables.net/2.0.8/css/dataTables.tailwindcss.cssv" />
+    <link
+        rel="stylesheet"
+        href="{% static 'css/output.css' %}" />
+
+    <script
+        type="module"
+        src="{% static 'js/script.js' %}"></script>
+        
+
+         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+    <link rel="icon" type="image/png" href="{% static 'img/favicon.png' %}" />
+</head>

@@ -1,9 +1,30 @@
 {% extends '_base.html' %} {% block body %}
 <!-- Open the modal using ID.showModal() method -->
+<section class="flex flex-warp flex-col md:flex-row gap-4 mb-10">
+    <div class="card w-full bg-base-100 ">
+        <div class="card-body">
+            <p class="text-center font-semibold">SSH Login Success</p>
+            <h2 class="font-bold md:text-4xl  text-sky-800 text-center">{{success_count}}</h2>
+          </div>
+    </div>
+    <div class="divider lg:divider-horizontal"></div>
+    <div class="card w-full bg-base-100 ">
+        <div class="card-body">
+            <p class="text-center font-semibold">Banned IP</p>
+            <h2 class="font-bold md:text-4xl text-red-800 text-center">{{banned_count}}</h2>
+          </div>
+    </div>
+    <div class="divider lg:divider-horizontal"></div>
+    <div class="card w-full bg-base-100 ">
+        <div class="card-body">
+            <p class="text-center font-semibold">White List IP</p>
+            <h2 class="font-bold md:text-4xl text-green-800 text-center">{{white_count}}</h2>
+          </div>
+    </div>
+</section>
 
 <section class="overflow-x-auto">
-    <h1 class="text-xl sm:text-4xl">IDPS Log</h1>
-
+    <div class="divider divider-neutral"><h1 class="text-lg mb-2 text-center sm:text-3xl">IDPS Log</h1></div>
     <table
         class="table text-center"
         id="myTable">

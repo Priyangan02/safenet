@@ -17,8 +17,10 @@ $(document).ready(function () {
             { "className": "dt-center", "targets": "_all" }
         ],
     });
+    $('.dt_search  input').addClass('border border-gray-300 rounded-md px-4 py-2');
 
-
-
+    // Adding Tailwind classes to other DataTables elements if necessary
+    $('.dataTables_length select').addClass('border border-gray-300 rounded-md px-4 py-2');
+    $('.dataTables_wrapper').addClass('mt-4');
 
 })
