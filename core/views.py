@@ -110,10 +110,17 @@ class BannedIpView(ListView):
 
 
 def deleteBannedIp(request,pk):
-    bannedip = BannedIP.objects.get(pk=pk)
-    BannedIP.objects.get(pk=pk)
-    bannedip.delete()
-    messages.success(request, "Banned IP berhasil dihapus.")
+    try:
+        bannedip = BannedIP.objects.get(pk=pk)
+        ip = bannedip.ip
+        subprocess.run(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
+        bannedip.delete()
+        messages.success(request, "Banned IP berhasil dihapus.")
+    except CalledProcessError as e:
+        # Tangani kesalahan saat perintah iptables gagal
+        logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+        messages.error(request, "Banned IP gagal dihapus.")
+        # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
     return redirect('bannedip')
     
 
