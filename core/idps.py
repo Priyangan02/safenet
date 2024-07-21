@@ -83,6 +83,7 @@ def save_iptables_rules():
     try:
         subprocess.check_call(["sudo", "netfilter-persistent", "save"])
     except subprocess.CalledProcessError as e:
+        
         logging.error(f"Failed to save iptables rules: {str(e)}")
 
 def restore_iptables_rules():
