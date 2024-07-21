@@ -4,10 +4,10 @@
 <html lang="en">
     {% include '_head.html' %}
     <body
-        class="min-h-screen h-screen"
+        class="min-h-screen h-full"
         data-theme="bumbleebee">
         {% include '_navbar.html' %}
-        <main class="container max-w-[1080px]  m-auto">{% block body %} {% endblock body %}</main>
+        <main class="container max-w-[1080px] min-h-screen  m-auto">{% block body %} {% endblock body %}</main>
         {% include '_footer.html' %}
     </body>
 </html>
