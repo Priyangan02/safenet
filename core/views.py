@@ -177,6 +177,7 @@ def deleteWaitList(request,pk):
 def enable_service():
     try:
         # Command to be executed
+        
         command = ['sudo','systemctl', 'enable', '--now', 'idps.service']
         
         # Running the command
@@ -194,7 +195,7 @@ def disable_service():
     try:
         # Command to be executed
         command = ['sudo', 'systemctl', 'stop', '--now', 'idps.service']
-        
+        subprocess.check_call(["sudo", "netfilter-persistent", "save"])
         # Running the command
         result = subprocess.run(command, check=True, text=True, capture_output=True)
         

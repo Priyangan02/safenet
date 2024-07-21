@@ -73,6 +73,7 @@ def block_ip(ip, service):
     try:
         subprocess.check_call(["sudo","iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
         logging.info(f"Blocked IP {ip}")
+        save_log("Blocked IP", ip, "SSH")
         save_blocked_ip(ip, service)
         save_iptables_rules()
     except subprocess.CalledProcessError as e:
