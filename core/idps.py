@@ -25,9 +25,15 @@ from core.models import IDPSLog, BannedIP, WhiteList, SSHSuccess, Config
 logging.basicConfig(filename="/var/log/idps.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
 # Ambil konfigurasi dari database
-config = Config.objects.first()
-if not config:
-    config = Config.objects.create()
+
+# Ambil konfigurasi dari database
+try:
+    config = Config.objects.first()
+    if not config:
+        config = Config.objects.create()
+except Exception as e:
+    logging.error(f"Failed to fetch or create config: {str(e)}")
+    sys.exit(1)
 
 # Ambang batas dan penyimpanan data serangan
 FLOOD_THRESHOLD = config.th_flood
@@ -74,13 +80,13 @@ def block_ip(ip, service):
 
 def save_iptables_rules():
     try:
-        subprocess.check_call(["sudo", "iptables-save", "-f", "/etc/iptables/rules.v4"])
+        subprocess.check_call(["sudo", "netfilter-persistent", "save"])
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to save iptables rules: {str(e)}")
 
 def restore_iptables_rules():
     try:
-        subprocess.check_call(["sudo", "iptables-restore", "/etc/iptables/rules.v4"])
+        subprocess.check_call(["sudo", "netfilter-persistent", "reload"])
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to restore iptables rules: {str(e)}")
 
