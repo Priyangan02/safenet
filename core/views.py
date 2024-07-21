@@ -155,6 +155,7 @@ class WhiteListView(ListView):
         return render(request, self.template_name, context)
     
 
+
 def deleteWaitList(request,pk):
     try:
         whitelist = WhiteList.objects.get(pk=pk)    
@@ -177,7 +178,7 @@ def deleteWaitList(request,pk):
 def enable_service():
     try:
         # Command to be executed
-        
+
         command = ['sudo','systemctl', 'enable', '--now', 'idps.service']
         
         # Running the command
