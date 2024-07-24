@@ -10,6 +10,17 @@ from django.http import JsonResponse
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+
+# Konfigurasi logging
+logging.basicConfig(filename="/var/log/idps.log", level=logging.INFO, format="%(asctime)s - %(message)s")
+
+def ip_already_blocked(ip):
+    try:
+        subprocess.check_call(["sudo","iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"] ,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    
 class IndexView(ListView):
     model = IDPSLog
     context_object_name ='idpslog'
@@ -53,6 +64,7 @@ class ConfigView(LoginRequiredMixin,TemplateView):
             print("Disable button clicked")
             active = False
         return JsonResponse({'status': 'success','active':active})
+    
 def updateConfig(request, pk):
     config = get_object_or_404(Config, id=pk)
     
@@ -67,11 +79,14 @@ def updateConfig(request, pk):
                 config.th_flood = int(th_flood)
                 config.save()
                 messages.success(request, "Konfigurasi berhasil diperbarui.")
+                logging.info(f"Update config for Flood Threshold {th_flood} and SSH Threshold {th_ssh}")
                 return redirect('config')  # Pastikan ada view config_detail yang sesuai
+                
             except ValueError:
                 # Tangani kasus jika nilai yang dimasukkan bukan integer
                 messages.error(request, "Konfigurasi gagal diperbarui.")
-                return HttpResponse("Nilai harus berupa angka.")
+                logging.error(f"Failed to update config for Flood Threshold and SSH Threshold")
+                return 
         else:
             messages.error(request, "Pastikan semua data telah terisi.")
             return redirect('config')  # Pastikan ada view config_detail yang sesuai
@@ -97,10 +112,11 @@ class BannedIpView(ListView):
             subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
             BannedIP.objects.create(service=service, ip=ip)
             messages.success(request, "Banned IP berhasil ditambahkan.")
+            logging.info(f"Success to add Banned IP {ip} service {service}")
         except CalledProcessError as e:
             # Tangani kesalahan saat perintah iptables gagal
             messages.error(request, "Banned IP gagal ditambahkan.")
-            logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+            logging.error(f"Failed to add Banned IP {ip} service {service}")
             # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
 
         # Ambil ulang data yang akan ditampilkan dalam ListView setelah penambahan
@@ -113,12 +129,15 @@ def deleteBannedIp(request,pk):
     try:
         bannedip = BannedIP.objects.get(pk=pk)
         ip = bannedip.ip
+        service = bannedip.service
         subprocess.run(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
         bannedip.delete()
         messages.success(request, "Banned IP berhasil dihapus.")
+        logging.info(f"Success to detele Banned IP {ip} service {service}")
     except CalledProcessError as e:
         # Tangani kesalahan saat perintah iptables gagal
         logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+        logging.error(f"Failed to delete Banned IP {ip} service {service}")
         messages.error(request, "Banned IP gagal dihapus.")
         # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
     return redirect('bannedip')
@@ -139,11 +158,18 @@ class WhiteListView(ListView):
         service = request.POST.get('service', '')
         
         try:
-            subprocess.check_call(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
-            subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
+            if ip_already_blocked(ip):
+                subprocess.check_call(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
+                subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
+                logging.info(f"IP {ip} is blocked, delete from Banned IP.")
+            else:
+                subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
+                logging.info(f"Success add Whitelist {ip} for {service}")
+
         except CalledProcessError as e:
             # Tangani kesalahan saat perintah iptables gagal
-            logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+            logging.error(f"Failed to add Whitelist {ip} for {service}")
+            logging.error(f"Failed to add iptables rule for {ip}: {str(e)}")
             # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
 
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
@@ -160,13 +186,16 @@ def deleteWaitList(request,pk):
     try:
         whitelist = WhiteList.objects.get(pk=pk)    
         ip = whitelist.ip
+        service = whitelist.service
         subprocess.run(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
         
         whitelist.delete()
         messages.success(request, "White IP berhasil dihapus.")
+        logging.info(f"Success to delete Whitelist for {ip} service {service}")
     except CalledProcessError as e:
         # Tangani kesalahan saat perintah iptables gagal
         logging.error(f"Failed to delete iptables rule for {ip}: {str(e)}")
+        logging.error(f"Failed to delete Whitelist {ip} for {service}")
         messages.error(request, "White IP gagal dihapus.")
         # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
     
@@ -180,6 +209,7 @@ def enable_service():
         # Command to be executed
 
         command = ['sudo','systemctl', 'enable', '--now', 'idps.service']
+        logging.info(f"Enabling IDPS Service")
         
         # Running the command
         result = subprocess.run(command, check=True, text=True, capture_output=True)
@@ -197,6 +227,7 @@ def disable_service():
         # Command to be executed
         command = ['sudo', 'systemctl', 'stop', '--now', 'idps.service']
         subprocess.check_call(["sudo", "netfilter-persistent", "save"])
+        logging.info(f"Disabling IDPS Service")
         # Running the command
         result = subprocess.run(command, check=True, text=True, capture_output=True)
         
@@ -208,3 +239,4 @@ def disable_service():
         print(f"Error occurred: {e}")
         print("stdout:", e.stdout)
         print("stderr:", e.stderr)
+

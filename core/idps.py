@@ -25,12 +25,11 @@ from core.models import IDPSLog, BannedIP, WhiteList, SSHSuccess, Config
 logging.basicConfig(filename="/var/log/idps.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
 # Ambil konfigurasi dari database
-
-# Ambil konfigurasi dari database
 try:
     config = Config.objects.first()
     if not config:
         config = Config.objects.create()
+    logging.info("Successfully fetched or created configuration from database.")
 except Exception as e:
     logging.error(f"Failed to fetch or create config: {str(e)}")
     sys.exit(1)
@@ -50,7 +49,7 @@ def save_blocked_ip(ip, service):
     BannedIP.objects.create(service=service, ip=ip)
 
 def save_successful_login(ip, user, port, protocol):
-    log = IDPSLog.objects.create(service="SSH", message=f"Successful SSH login from {ip}", ip=ip)
+    log = IDPSLog.objects.create(service=protocol, message=f"Successful SSH login from {ip}", ip=ip)
     SSHSuccess.objects.create(id_idpslog=log, protocol=protocol, user_login=user, port=port, ip=ip)
 
 def ip_already_blocked(ip):
@@ -64,6 +63,8 @@ def block_ip(ip, service):
     # Bypass IPs in WhiteList
     if WhiteList.objects.filter(ip=ip).exists():
         logging.info(f"IP {ip} is in whitelist, skipping block.")
+        # Mencatat ke log bahwa IP di whitelist
+        save_log(f"IP {ip} is in whitelist, skipping block.", ip, service)
         return
     
     if ip_already_blocked(ip):
@@ -73,11 +74,13 @@ def block_ip(ip, service):
     try:
         subprocess.check_call(["sudo","iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
         logging.info(f"Blocked IP {ip}")
-        save_log("Blocked IP", ip, "SSH")
+        save_log("Blocked IP", ip, service)
         save_blocked_ip(ip, service)
         save_iptables_rules()
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to block IP {ip}: {str(e)}")
+        # Mencatat ke log bahwa blokir gagal
+        save_log(f"Failed to block IP {ip}: {str(e)}", ip, "SSH")
 
 def save_iptables_rules():
     try:
@@ -95,6 +98,10 @@ def restore_iptables_rules():
 def packet_callback(packet):
     if IP in packet:
         ip_src = packet[IP].src
+
+        # Mendapatkan informasi tambahan dari header paket
+        ttl = packet[IP].ttl
+        tos = packet[IP].tos
 
         # Bypass IPs in WhiteList
         if WhiteList.objects.filter(ip=ip_src).exists():
@@ -124,7 +131,7 @@ def packet_callback(packet):
         if flood_detection[ip_src]["count"] > FLOOD_THRESHOLD:
             # Cek apakah sudah mencatat log untuk flood attack ini dalam interval waktu tertentu
             if current_time - flood_detection[ip_src]["last_logged"] > LOG_INTERVAL:
-                logging.info(f"Flood attack detected from {ip_src}")
+                logging.info(f"Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
                 save_log("Flood attack detected", ip_src, service)
                 flood_detection[ip_src]["last_logged"] = current_time
             
@@ -140,30 +147,35 @@ def monitor_ssh_log():
             ip = None
             user = None
             port = None
+            protocol = None
 
             if "Failed password" in line:
                 ip = line.split()[-4]
+                user = line.split()[-6]
+                port = line.split()[-2]
+                protocol = line.split()[-1]
                 if WhiteList.objects.filter(ip=ip).exists():
                     continue
                 ssh_brute_force[ip] += 1
-                logging.info(f"Failed SSH login attempt from {ip}")
-                save_log("Failed SSH login attempt", ip, "SSH")
+                logging.info(f"Failed SSH login attempt from {ip} to {user} using port {port} protocol {protocol}")
+                save_log("Failed SSH login attempt", ip, protocol)
 
                 if ssh_brute_force[ip] > SSH_BRUTE_FORCE_THRESHOLD:
-                    block_ip(ip, "SSH")
+                    block_ip(ip, protocol)
                     ssh_brute_force[ip] = 0
             elif "Accepted password" in line or "Accepted publickey" in line:
                 ip = line.split()[-4]
                 user = line.split()[8] if "Accepted password" in line else line.split()[10]
                 port = line.split()[-2]
+                protocol = line.split()[-1]
                 if WhiteList.objects.filter(ip=ip).exists():
                     logging.info(f"Successful SSH login from whitelisted IP {ip}")
                 else:
-                    logging.info(f"Successful SSH login from {ip}")
-                save_successful_login(ip, user, port, "SSH")
+                    logging.info(f"Successful SSH login from {ip} use port {port} for {user} protocol {protocol}")
+                save_successful_login(ip, user, port, protocol)
 
 def main():
-    print("Starting packet capture and SSH log monitoring. Press Ctrl+C to stop.")
+    print("Starting packet capture and SSH log monitoring.")
     try:
         restore_iptables_rules()
         sniff(prn=packet_callback, store=0)
