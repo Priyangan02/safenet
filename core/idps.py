@@ -74,7 +74,7 @@ def block_ip(ip, service):
     try:
         subprocess.check_call(["sudo","iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
         logging.info(f"Blocked IP {ip}")
-        save_log("Blocked IP", ip, service)
+        save_log(f"Blocked IP {ip}", ip, service)
         save_blocked_ip(ip, service)
         save_iptables_rules()
     except subprocess.CalledProcessError as e:
@@ -165,11 +165,11 @@ def monitor_ssh_log():
                     ssh_brute_force[ip] = 0
             elif "Accepted password" in line or "Accepted publickey" in line:
                 ip = line.split()[-4]
-                user = line.split()[8] if "Accepted password" in line else line.split()[10]
+                user = line.split()[6]
                 port = line.split()[-2]
                 protocol = line.split()[-1]
                 if WhiteList.objects.filter(ip=ip).exists():
-                    logging.info(f"Successful SSH login from whitelisted IP {ip}")
+                    logging.info(f"Successful SSH login from whitelisted IP {ip}to {user} using port {port} protocol {protocol}")
                 else:
                     logging.info(f"Successful SSH login from {ip} use port {port} for {user} protocol {protocol}")
                 save_successful_login(ip, user, port, protocol)
