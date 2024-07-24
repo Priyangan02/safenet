@@ -21,26 +21,26 @@ django.setup()
 
 from core.models import IDPSLog, BannedIP, WhiteList, SSHSuccess, Config
 
-# Konfigurasi logging
+# Logging configuration
 logging.basicConfig(filename="/var/log/idps.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
-# Ambil konfigurasi dari database
+# Fetch configuration from the database
 try:
     config = Config.objects.first()
     if not config:
         config = Config.objects.create()
-    logging.info("Successfully fetched or created configuration from database.")
+    logging.info("Configuration successfully fetched or created from the database.")
 except Exception as e:
-    logging.error(f"Failed to fetch or create config: {str(e)}")
+    logging.error(f"Failed to fetch or create configuration: {str(e)}")
     sys.exit(1)
 
-# Ambang batas dan penyimpanan data serangan
+# Thresholds and attack data storage
 FLOOD_THRESHOLD = config.th_flood
 SSH_BRUTE_FORCE_THRESHOLD = config.th_ssh
 
 ssh_brute_force = defaultdict(int)
 flood_detection = defaultdict(lambda: {"count": 0, "time": 0, "last_logged": 0})
-LOG_INTERVAL = 60  # Interval waktu dalam detik untuk mencatat log flood attack
+LOG_INTERVAL = 60  # Log flood attack interval in seconds
 
 def save_log(message, ip, service):
     IDPSLog.objects.create(service=service, message=message, ip=ip)
@@ -54,7 +54,7 @@ def save_successful_login(ip, user, port, protocol):
 
 def ip_already_blocked(ip):
     try:
-        subprocess.check_call(["sudo","iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"])
+        subprocess.check_call(["sudo","iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return True
     except subprocess.CalledProcessError:
         return False
@@ -62,31 +62,28 @@ def ip_already_blocked(ip):
 def block_ip(ip, service):
     # Bypass IPs in WhiteList
     if WhiteList.objects.filter(ip=ip).exists():
-        logging.info(f"IP {ip} is in whitelist, skipping block.")
-        # Mencatat ke log bahwa IP di whitelist
-        save_log(f"IP {ip} is in whitelist, skipping block.", ip, service)
+        logging.info(f"IP {ip} is whitelisted, skipping block.")
+        save_log(f"IP {ip} is whitelisted, skipping block.", ip, service)
         return
     
     if ip_already_blocked(ip):
-        logging.info(f"IP {ip} already blocked, skipping.")
+        logging.info(f"IP {ip} is already blocked, skipping.")
         return
     
     try:
         subprocess.check_call(["sudo","iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
-        logging.info(f"Blocked IP {ip}")
-        save_log(f"Blocked IP {ip}", ip, service)
+        logging.info(f"IP {ip} has been blocked.")
+        save_log(f"IP {ip} has been blocked.", ip, service)
         save_blocked_ip(ip, service)
         save_iptables_rules()
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to block IP {ip}: {str(e)}")
-        # Mencatat ke log bahwa blokir gagal
         save_log(f"Failed to block IP {ip}: {str(e)}", ip, "SSH")
 
 def save_iptables_rules():
     try:
         subprocess.check_call(["sudo", "netfilter-persistent", "save"])
     except subprocess.CalledProcessError as e:
-        
         logging.error(f"Failed to save iptables rules: {str(e)}")
 
 def restore_iptables_rules():
@@ -99,7 +96,7 @@ def packet_callback(packet):
     if IP in packet:
         ip_src = packet[IP].src
 
-        # Mendapatkan informasi tambahan dari header paket
+        # Get additional information from the packet header
         ttl = packet[IP].ttl
         tos = packet[IP].tos
 
@@ -127,16 +124,16 @@ def packet_callback(packet):
                 flood_detection[ip_src]["time"] = current_time
                 service = "ICMP"
 
-        # Jika serangan terdeteksi
+        # If an attack is detected
         if flood_detection[ip_src]["count"] > FLOOD_THRESHOLD:
-            # Cek apakah sudah mencatat log untuk flood attack ini dalam interval waktu tertentu
+            # Check if log for this flood attack has been recorded within a certain interval
             if current_time - flood_detection[ip_src]["last_logged"] > LOG_INTERVAL:
                 logging.info(f"Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
                 save_log("Flood attack detected", ip_src, service)
                 flood_detection[ip_src]["last_logged"] = current_time
             
             block_ip(ip_src, service)
-            # Reset hitungan setelah pemblokiran
+            # Reset count after blocking
             flood_detection[ip_src] = {"count": 0, "time": 0, "last_logged": flood_detection[ip_src]["last_logged"]}
 
 def monitor_ssh_log():
@@ -157,8 +154,8 @@ def monitor_ssh_log():
                 if WhiteList.objects.filter(ip=ip).exists():
                     continue
                 ssh_brute_force[ip] += 1
-                logging.info(f"Failed SSH login attempt from {ip} to {user} using port {port} protocol {protocol}")
-                save_log("Failed SSH login attempt", ip, protocol)
+                logging.info(f"Failed SSH login attempt from {ip} to {user} using port {port}, protocol {protocol}.")
+                save_log(f"Failed SSH login attempt from {ip}", ip, protocol)
 
                 if ssh_brute_force[ip] > SSH_BRUTE_FORCE_THRESHOLD:
                     block_ip(ip, protocol)
@@ -169,9 +166,9 @@ def monitor_ssh_log():
                 port = line.split()[-2]
                 protocol = line.split()[-1]
                 if WhiteList.objects.filter(ip=ip).exists():
-                    logging.info(f"Successful SSH login from whitelisted IP {ip}to {user} using port {port} protocol {protocol}")
+                    logging.info(f"Successful SSH login from whitelisted IP {ip} to {user} using port {port}, protocol {protocol}.")
                 else:
-                    logging.info(f"Successful SSH login from {ip} use port {port} for {user} protocol {protocol}")
+                    logging.info(f"Successful SSH login from {ip} using port {port} for {user}, protocol {protocol}.")
                 save_successful_login(ip, user, port, protocol)
 
 def main():
@@ -193,4 +190,3 @@ threading.Thread(target=monitor_ssh_log, daemon=True).start()
 
 if __name__ == "__main__":
     main()
-
