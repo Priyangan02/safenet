@@ -18,17 +18,17 @@
     {% csrf_token %}
     <label class="form-control w-full max-w-xs">
         <div class="label">
-          <span class="label-text">Threshold</span>
+          <span class="label-text">SSH Threshold</span>
         </div>
         <input type="text" name="th_ssh" placeholder="Input your Treshold here" class="input input-bordered" value="{{config.th_ssh}}" />
       </label>
       <label class="form-control w-full max-w-xs">
         <div class="label">
-          <span class="label-text">Flood</span>
+          <span class="label-text">Flood Threshold</span>
         </div>
         <input type="text" name="th_flood" placeholder="Input your Flood here" class="input input-bordered" value="{{config.th_flood}}" />
       </label>
-      <button class="btn btn-success">Submit</button>
+      <button class="btn btn-success">Simpan</button>
   </form>
 <script>
         $(document).ready(function(){
