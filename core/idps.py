@@ -37,6 +37,8 @@ except Exception as e:
 # Thresholds and attack data storage
 FLOOD_THRESHOLD = config.th_flood
 SSH_BRUTE_FORCE_THRESHOLD = config.th_ssh
+WHITELISTED_SSH_THRESHOLD = 6
+WHITELISTED_FLOOD_THRESHOLD = 4000
 
 ssh_brute_force = defaultdict(int)
 flood_detection = defaultdict(lambda: {"count": 0, "time": 0, "last_logged": 0})
@@ -100,10 +102,6 @@ def packet_callback(packet):
         ttl = packet[IP].ttl
         tos = packet[IP].tos
 
-        # Bypass IPs in WhiteList
-        if WhiteList.objects.filter(ip=ip_src).exists():
-            return
-
         current_time = time.time()
         service = None
 
@@ -124,17 +122,23 @@ def packet_callback(packet):
                 flood_detection[ip_src]["time"] = current_time
                 service = "ICMP"
 
-        # If an attack is detected
-        if flood_detection[ip_src]["count"] > FLOOD_THRESHOLD:
-            # Check if log for this flood attack has been recorded within a certain interval
-            if current_time - flood_detection[ip_src]["last_logged"] > LOG_INTERVAL:
-                logging.info(f"Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
-                save_log("Flood attack detected", ip_src, service)
-                flood_detection[ip_src]["last_logged"] = current_time
-            
-            block_ip(ip_src, service)
-            # Reset count after blocking
-            flood_detection[ip_src] = {"count": 0, "time": 0, "last_logged": flood_detection[ip_src]["last_logged"]}
+        # Check if IP is whitelisted and exceeds the whitelisted flood threshold
+        if WhiteList.objects.filter(ip=ip_src).exists():
+            if flood_detection[ip_src]["count"] > WHITELISTED_FLOOD_THRESHOLD:
+                logging.info(f"Suspicious flood activity detected from whitelisted IP {ip_src}. TTL: {ttl}, ToS: {tos}")
+                save_log("Suspicious flood activity detected", ip_src, service)
+        else:
+            # If an attack is detected for non-whitelisted IP
+            if flood_detection[ip_src]["count"] > FLOOD_THRESHOLD:
+                # Check if log for this flood attack has been recorded within a certain interval
+                if current_time - flood_detection[ip_src]["last_logged"] > LOG_INTERVAL:
+                    logging.info(f"Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
+                    save_log("Flood attack detected", ip_src, service)
+                    flood_detection[ip_src]["last_logged"] = current_time
+                
+                block_ip(ip_src, service)
+                # Reset count after blocking
+                flood_detection[ip_src] = {"count": 0, "time": 0, "last_logged": flood_detection[ip_src]["last_logged"]}
 
 def monitor_ssh_log():
     ssh_logfile = "/var/log/auth.log"
@@ -152,6 +156,11 @@ def monitor_ssh_log():
                 port = line.split()[-2]
                 protocol = line.split()[-1]
                 if WhiteList.objects.filter(ip=ip).exists():
+                    # Log suspicious activity for whitelisted IP
+                    ssh_brute_force[ip] += 1
+                    if ssh_brute_force[ip] > WHITELISTED_SSH_THRESHOLD:
+                        logging.info(f"Suspicious Failed SSH login attempts from whitelisted IP {ip} to {user} using port {port}, protocol {protocol}.")
+                        save_log(f"Suspicious Failed SSH login attempts from whitelisted IP {ip}", ip, protocol)
                     continue
                 ssh_brute_force[ip] += 1
                 logging.info(f"Failed SSH login attempt from {ip} to {user} using port {port}, protocol {protocol}.")
