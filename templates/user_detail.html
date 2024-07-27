@@ -1,0 +1,64 @@
+{% extends '_base.html' %}
+
+{% block body %}
+    
+
+<section class="flex justify-between mt-10">
+    <div>
+        <h1 class="text-4xl">User Details</h1>
+        <p class="text-xl">Username: {{ user.username }}</p>
+        <p class="text-xl">Email: {{ user.email }}</p>
+    </div>
+    <button class="btn btn-success" onclick="my_modal_5.showModal()">Ubah Password</button>
+</section>
+<!-- Open the modal using ID.showModal() method -->
+
+<dialog id="my_modal_5" class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box">
+    <form method="post" class="flex flex-col gap-2">
+        {% csrf_token %}
+        <label>
+            <div class="label">
+                <span for="old_password" class="label-text">Masukan Password Lama: </span>
+              </div>
+            <input type="password" name="old_password" class="input input-bordered w-full" id="old_password" required />
+        </label>
+        <label>
+            <div class="label">
+                <span for="old_password" class="label-text">Masukan Password Baru: </span>
+              </div>
+            <input type="password" name="new_password1" class="input input-bordered w-full " id="new_password1" required />
+        </label>
+        <label>
+            <div class="label">
+                <span for="old_password" class="label-text">Konfirmasi Password Baru: </span>
+              </div>
+            <input type="password" name="new_password2" class="input input-bordered w-full " id="new_password2" required />
+        </label>
+        <button type="submit" class="btn btn-success ">Change Password</button>
+    </form>
+    <p class="py-4">Press ESC key or click the button below to close</p>
+    <div class="modal-action">
+      <form method="dialog">
+        <!-- if there is a button in form, it will close the modal -->
+        <button class="btn">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+{% include '_alert.html' %}
+
+
+{% if form.errors %}
+    <div class="errors">
+        <ul>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+{% endblock body %}

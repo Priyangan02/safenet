@@ -48,6 +48,8 @@ def update_whitelist(sender, instance, created, **kwargs):
 class Config(models.Model):
     th_ssh = models.IntegerField(default=5)
     th_flood = models.IntegerField(default=1000)
+    wl_ssh = models.IntegerField(default=5)
+    wl_flood = models.IntegerField(default=1000)
     def __str__(self):
         return f"SSH Threshold {self.th_ssh},Flood Threshold {self.th_flood} "
 

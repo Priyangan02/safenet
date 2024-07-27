@@ -14,21 +14,35 @@
         </div>
     </div>  
 </section>
-<form class="flex flex-col max-w-xs gap-2 justify-center mx-auto" method="POST" action="{% url 'config-update' config.pk %}" >
+<form  method="POST" class="mx-auto max-w-md" action="{% url 'config-update' config.pk %}" >
+    <div class="grid grid-cols-2  gap-4 justify-center ">
     {% csrf_token %}
-    <label class="form-control w-full max-w-xs">
+    <label class="form-control w-full">
         <div class="label">
           <span class="label-text">SSH Threshold</span>
         </div>
         <input type="text" name="th_ssh" placeholder="Input your Treshold here" class="input input-bordered" value="{{config.th_ssh}}" />
       </label>
-      <label class="form-control w-full max-w-xs">
+      <label class="form-control w-full">
         <div class="label">
           <span class="label-text">Flood Threshold</span>
         </div>
         <input type="text" name="th_flood" placeholder="Input your Flood here" class="input input-bordered" value="{{config.th_flood}}" />
       </label>
-      <button class="btn btn-success">Simpan</button>
+      <label class="form-control w-full">
+      <div class="label">
+        <span class="label-text">WhiteList SSH Threshold</span>
+      </div>
+      <input type="text" name="wl_ssh" placeholder="Input your Treshold here" class="input input-bordered" value="{{config.wl_ssh}}" />
+    </label>
+    <label class="form-control w-full">
+      <div class="label">
+        <span class="label-text">WhiteList Flood Threshold</span>
+      </div>
+      <input type="text" name="wl_flood" placeholder="Input your Flood here" class="input input-bordered" value="{{config.wl_flood}}" />
+    </label>
+</div>  
+      <button class="btn btn-success mt-5 w-full">Simpan</button>
   </form>
 <script>
         $(document).ready(function(){

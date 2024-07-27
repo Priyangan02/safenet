@@ -71,15 +71,18 @@ def updateConfig(request, pk):
     if request.method == "POST":
         th_ssh = request.POST.get('th_ssh')
         th_flood = request.POST.get('th_flood')
-        
+        wl_ssh = request.POST.get('wl_ssh')
+        wl_flood = request.POST.get('wl_flood')
         # Validasi sederhana
-        if th_ssh and th_flood:
+        if th_ssh and th_flood and wl_ssh and wl_flood:
             try:
                 config.th_ssh = int(th_ssh)
                 config.th_flood = int(th_flood)
+                config.wl_ssh = int(wl_ssh)
+                config.wl_flood = int(wl_flood)
                 config.save()
                 messages.success(request, "Konfigurasi berhasil diperbarui.")
-                logging.info(f"Update config for Flood Threshold {th_flood} and SSH Threshold {th_ssh}")
+                logging.info(f"Update config for Flood Threshold {th_flood} white list: {wl_ssh} and SSH Threshold {th_ssh} white list {wl_flood}")
                 return redirect('config')  # Pastikan ada view config_detail yang sesuai
                 
             except ValueError:

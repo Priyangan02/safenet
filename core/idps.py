@@ -37,8 +37,8 @@ except Exception as e:
 # Thresholds and attack data storage
 FLOOD_THRESHOLD = config.th_flood
 SSH_BRUTE_FORCE_THRESHOLD = config.th_ssh
-WHITELISTED_SSH_THRESHOLD = 6
-WHITELISTED_FLOOD_THRESHOLD = 4000
+WHITELISTED_SSH_THRESHOLD = config.wl_ssh
+WHITELISTED_FLOOD_THRESHOLD = config.wl_flood
 
 ssh_brute_force = defaultdict(int)
 flood_detection = defaultdict(lambda: {"count": 0, "time": 0, "last_logged": 0})
