@@ -125,15 +125,15 @@ def packet_callback(packet):
         # Check if IP is whitelisted and exceeds the whitelisted flood threshold
         if WhiteList.objects.filter(ip=ip_src).exists():
             if flood_detection[ip_src]["count"] > WHITELISTED_FLOOD_THRESHOLD:
-                logging.info(f"Suspicious flood activity detected from whitelisted IP {ip_src}. TTL: {ttl}, ToS: {tos}")
-                save_log("Suspicious flood activity detected", ip_src, service)
+                logging.info(f"Suspicious {service} flood activity detected from whitelisted IP {ip_src}. TTL: {ttl}, ToS: {tos}")
+                save_log(f"Suspicious {service} flood activity detected", ip_src, service)
         else:
             # If an attack is detected for non-whitelisted IP
             if flood_detection[ip_src]["count"] > FLOOD_THRESHOLD:
                 # Check if log for this flood attack has been recorded within a certain interval
                 if current_time - flood_detection[ip_src]["last_logged"] > LOG_INTERVAL:
-                    logging.info(f"Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
-                    save_log("Flood attack detected", ip_src, service)
+                    logging.info(f"{service} Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
+                    save_log(f"{service} Flood attack detected", ip_src, service)
                     flood_detection[ip_src]["last_logged"] = current_time
                 
                 block_ip(ip_src, service)
