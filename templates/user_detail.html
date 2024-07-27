@@ -4,12 +4,20 @@
     
 
 <section class="flex justify-between mt-10">
-    <div>
-        <h1 class="text-4xl">User Details</h1>
-        <p class="text-xl">Username: {{ user.username }}</p>
-        <p class="text-xl">Email: {{ user.email }}</p>
+    
+    <div class="card card-compact bg-base-100 w-96 shadow-xl ">
+        <div class="card-body">
+          <h2 class="card-title">User Detail</h2>
+          <p class="text-xl">Username: {{ user.username }}</p>
+          <p class="text-xl">Email: {{ user.email }}</p>
+        </div>
+          <div class="card-actions justify-end">
+            <button class="btn w-full btn-success" onclick="my_modal_5.showModal()">Ubah Password</button>
+          </div>
     </div>
-    <button class="btn btn-success" onclick="my_modal_5.showModal()">Ubah Password</button>
+      
+       
+    
 </section>
 <!-- Open the modal using ID.showModal() method -->
 

@@ -42,7 +42,7 @@ class SSHSuccess(models.Model):
 def update_whitelist(sender, instance, created, **kwargs):
     if created:
         # Cari IP yang sama di BannedIP dan hapus jika ditemukan
-        duplicate_banned_ips = BannedIP.objects.filter(ip=instance.ip)
+        duplicate_banned_ips = BannedIP.objects.filter(ip=instance.ip, service=instance.service)
         if duplicate_banned_ips.exists():
             duplicate_banned_ips.delete()
 class Config(models.Model):

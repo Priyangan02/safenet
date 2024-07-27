@@ -14,9 +14,9 @@ from django.utils.decorators import method_decorator
 # Konfigurasi logging
 logging.basicConfig(filename="/var/log/idps.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
-def ip_already_blocked(ip):
+def ip_already_blocked(ip,service):
     try:
-        subprocess.check_call(["sudo","iptables", "-C", "INPUT", "-s", ip, "-j", "DROP"] ,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        IDPSAction(ip,service,"-C","DROP") 
         return True
     except subprocess.CalledProcessError:
         return False
@@ -112,7 +112,7 @@ class BannedIpView(ListView):
         service = request.POST.get('service', '')
         # Lakukan sesuatu dengan data POST yang diterima, misalnya simpan ke database
         try:
-            subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "DROP"])
+            IDPSAction(ip,service,"-A","DROP")
             BannedIP.objects.create(service=service, ip=ip)
             messages.success(request, "Banned IP berhasil ditambahkan.")
             logging.info(f"Success to add Banned IP {ip} service {service}")
@@ -133,7 +133,7 @@ def deleteBannedIp(request,pk):
         bannedip = BannedIP.objects.get(pk=pk)
         ip = bannedip.ip
         service = bannedip.service
-        subprocess.run(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
+        IDPSAction(ip,service,"-D","DROP")
         bannedip.delete()
         messages.success(request, "Banned IP berhasil dihapus.")
         logging.info(f"Success to detele Banned IP {ip} service {service}")
@@ -161,12 +161,12 @@ class WhiteListView(ListView):
         service = request.POST.get('service', '')
         
         try:
-            if ip_already_blocked(ip):
-                subprocess.check_call(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "DROP"])
-                subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
+            if ip_already_blocked(ip,service):
+                IDPSAction(ip,service,"-D","DROP")
+                IDPSAction(ip,service,"-A","ACCEPT")
                 logging.info(f"IP {ip} is blocked, delete from Banned IP.")
             else:
-                subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-j", "ACCEPT"])
+                IDPSAction(ip,service,"-A","ACCEPT")
                 logging.info(f"Success add Whitelist {ip} for {service}")
 
         except CalledProcessError as e:
@@ -190,7 +190,7 @@ def deleteWaitList(request,pk):
         whitelist = WhiteList.objects.get(pk=pk)    
         ip = whitelist.ip
         service = whitelist.service
-        subprocess.run(["sudo", "iptables", "-D", "INPUT", "-s", ip, "-j", "ACCEPT"])
+        IDPSAction(ip,service,"-D","ACCEPT")
         
         whitelist.delete()
         messages.success(request, "White IP berhasil dihapus.")
@@ -243,3 +243,16 @@ def disable_service():
         print("stdout:", e.stdout)
         print("stderr:", e.stderr)
 
+def IDPSAction(ip, service, action, group):
+    if service == "all":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip,  "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "tcpip":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "udp":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "udp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "icmp":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "icmp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "sshd":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "--dport", "22", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        pass
