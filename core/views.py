@@ -228,7 +228,7 @@ def enable_service():
 def disable_service():
     try:
         # Command to be executed
-        command = ['sudo', 'systemctl', 'stop', '--now', 'idps.service']
+        command = ['sudo', 'systemctl', 'stop', 'idps.service']
         subprocess.check_call(["sudo", "netfilter-persistent", "save"])
         logging.info(f"Disabling IDPS Service")
         # Running the command
