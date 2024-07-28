@@ -12,6 +12,7 @@ class IDPSLog(models.Model):
 
     def __str__(self):
         return f"{self.ip} - {self.service} on {self.tanggal} at {self.waktu}"
+    
 class BannedIP(models.Model):    
     tanggal = models.DateField(auto_now_add=True)
     waktu = models.TimeField(auto_now_add=True)
@@ -51,7 +52,7 @@ class Config(models.Model):
     wl_ssh = models.IntegerField(default=5)
     wl_flood = models.IntegerField(default=1000)
     def __str__(self):
-        return f"SSH Threshold {self.th_ssh},Flood Threshold {self.th_flood} "
+        return f"SSH Threshold {self.th_ssh},Flood Threshold {self.th_flood}, Whitelist Flood Threshold {self.wl_flood}, Whitelist SSH Threshold {self.wl_ssh} "
 
 class ConfigStatus(models.Model):
     

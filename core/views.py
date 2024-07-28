@@ -21,6 +21,20 @@ def ip_already_blocked(ip,service):
     except subprocess.CalledProcessError:
         return False
     
+def IDPSAction(ip, service, action, group):
+    if service == "all":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip,  "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "tcpip":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "udp":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "udp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "icmp":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "icmp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif service == "sshd":
+        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "--dport", "22", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    else:
+        pass
+    
 class IndexView(ListView):
     model = IDPSLog
     context_object_name ='idpslog'
@@ -33,6 +47,7 @@ class IndexView(ListView):
         context["success_count"] = SSHSuccess.objects.count()
         context["white_count"] = WhiteList.objects.count()
         return context
+    
 class SSHSuccessView(ListView):
     model = SSHSuccess
     context_object_name ='sshsuccess'
@@ -42,6 +57,7 @@ class SSHSuccessView(ListView):
         context = super().get_context_data(**kwargs)
         context["title"] = "SSH Sussess"
         return context
+    
 @method_decorator(csrf_exempt, name='dispatch')
 class ConfigView(LoginRequiredMixin,TemplateView):
     template_name = "config.html"
@@ -94,8 +110,6 @@ def updateConfig(request, pk):
             messages.error(request, "Pastikan semua data telah terisi.")
             return redirect('config')  # Pastikan ada view config_detail yang sesuai
         
-    
-
 class BannedIpView(ListView):
     template_name="bannedip.html"
     model = BannedIP
@@ -126,7 +140,6 @@ class BannedIpView(ListView):
         queryset = self.get_queryset()
         context = self.get_context_data(object_list=queryset)
         return render(request, self.template_name, context)
-
 
 def deleteBannedIp(request,pk):
     try:
@@ -183,8 +196,6 @@ class WhiteListView(ListView):
         context = self.get_context_data(object_list=queryset)
         return render(request, self.template_name, context)
     
-
-
 def deleteWaitList(request,pk):
     try:
         whitelist = WhiteList.objects.get(pk=pk)    
@@ -201,8 +212,6 @@ def deleteWaitList(request,pk):
         logging.error(f"Failed to delete Whitelist {ip} for {service}")
         messages.error(request, "White IP gagal dihapus.")
         # Anda bisa menambahkan pesan kesalahan ke context untuk ditampilkan di template
-    
-    
     return redirect('whitelist')
     
 
@@ -210,7 +219,6 @@ def deleteWaitList(request,pk):
 def enable_service():
     try:
         # Command to be executed
-
         command = ['sudo','systemctl', 'enable', '--now', 'idps.service']
         logging.info(f"Enabling IDPS Service")
         
@@ -243,16 +251,3 @@ def disable_service():
         print("stdout:", e.stdout)
         print("stderr:", e.stderr)
 
-def IDPSAction(ip, service, action, group):
-    if service == "all":
-        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip,  "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "tcpip":
-        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "udp":
-        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "udp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "icmp":
-        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "icmp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "sshd":
-        return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "--dport", "22", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    else:
-        pass
