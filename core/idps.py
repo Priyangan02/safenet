@@ -6,25 +6,18 @@ import signal
 import sys
 import threading
 from scapy.all import sniff, IP, TCP, UDP, ICMP
-from django.utils import timezone
 import django
 from django.conf import settings
 import os
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safenet.settings')
-
-# Add the project directory to the Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
-
-# Initialize Django
 django.setup()
 
 from core.models import IDPSLog, BannedIP, WhiteList, SSHSuccess, Config
 
-# Logging configuration
 logging.basicConfig(filename="/var/log/idps.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
-# Fetch configuration from the database
 try:
     config = Config.objects.first()
     if not config:
@@ -34,16 +27,15 @@ except Exception as e:
     logging.error(f"Failed to fetch or create configuration: {str(e)}")
     sys.exit(1)
 
-# Thresholds and attack data storage
 FLOOD_THRESHOLD = config.th_flood
 SSH_BRUTE_FORCE_THRESHOLD = config.th_ssh
 WHITELISTED_SSH_THRESHOLD = config.wl_ssh
 WHITELISTED_FLOOD_THRESHOLD = config.wl_flood
 
 ssh_brute_force = defaultdict(lambda: {"count": 0, "last_logged": 0})
-flood_detection = defaultdict(lambda: {"count": 0, "time": 0, "last_logged": 0, "service": None})
-LOG_INTERVAL = 60  # Log flood attack interval in seconds
-SUSPICIOUS_LOG_INTERVAL = 300  # Log suspicious activity interval in seconds
+flood_detection = defaultdict(lambda: {"count": 0, "time": 0, "last_logged": 0, "services": set()})
+LOG_INTERVAL = 60
+SUSPICIOUS_LOG_INTERVAL = 300
 
 def save_log(message, ip, service):
     IDPSLog.objects.create(service=service, message=message, ip=ip)
@@ -55,25 +47,22 @@ def save_successful_login(ip, user, port, protocol):
     log = IDPSLog.objects.create(service=protocol, message=f"Successful SSH login from {ip}", ip=ip)
     SSHSuccess.objects.create(id_idpslog=log, protocol=protocol, user_login=user, port=port, ip=ip)
 
-def ip_already_blocked(ip):
+def ip_already_blocked(ip, service):
     try:
         output = subprocess.check_output(["sudo", "iptables", "-L", "-n"], stderr=subprocess.PIPE).decode()
-        # Mengembalikan True jika ditemukan aturan dengan IP yang di-drop
-        if any(ip in line and "DROP" in line for line in output.splitlines()):
+        if any(ip in line and service.lower() in line.lower() and "DROP" in line for line in output.splitlines()):
             return True
         return False
     except subprocess.CalledProcessError as e:
         logging.error(f"Failed to check if IP {ip} is blocked: {str(e)}")
         return False
 
-
 def block_ip(ip, service):
-    # Bypass IPs in WhiteList
     if WhiteList.objects.filter(ip=ip).exists():
         logging.info(f"IP {ip} is whitelisted, skipping block.")
         save_log(f"IP {ip} is whitelisted, skipping block.", ip, service)
         return
-    
+
     if ip_already_blocked(ip, service):
         logging.info(f"IP {ip} is already blocked for {service}, skipping.")
         return
@@ -87,6 +76,7 @@ def block_ip(ip, service):
             subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-p", "icmp", "-j", "DROP"])
         elif service == "SSH":
             subprocess.check_call(["sudo", "iptables", "-A", "INPUT", "-s", ip, "-p", "tcp", "--dport", "22", "-j", "DROP"])
+
         logging.info(f"IP {ip} has been blocked for {service}.")
         save_log(f"IP {ip} has been blocked for {service}.", ip, service)
         save_blocked_ip(ip, service)
@@ -110,33 +100,29 @@ def restore_iptables_rules():
 def packet_callback(packet):
     if IP in packet:
         ip_src = packet[IP].src
-
-        # Get additional information from the packet header
         ttl = packet[IP].ttl
         tos = packet[IP].tos
-
         current_time = time.time()
         service = None
 
         if packet.haslayer(TCP):
-                flood_detection[ip_src]["count"] += 1
-                flood_detection[ip_src]["time"] = current_time
-                service = "TCP"
-                flood_detection[ip_src]["service"] = service
+            flood_detection[ip_src]["count"] += 1
+            flood_detection[ip_src]["time"] = current_time
+            service = "TCP"
+            flood_detection[ip_src]["services"].add(service)
         elif packet.haslayer(UDP):
             flood_detection[ip_src]["count"] += 1
             flood_detection[ip_src]["time"] = current_time
             service = "UDP"
-            flood_detection[ip_src]["service"] = service
+            flood_detection[ip_src]["services"].add(service)
         elif packet.haslayer(ICMP):
             icmp_type = packet[ICMP].type
-            if icmp_type == 8:  # ICMP Echo Request
+            if icmp_type == 8:
                 flood_detection[ip_src]["count"] += 1
                 flood_detection[ip_src]["time"] = current_time
                 service = "ICMP"
-                flood_detection[ip_src]["service"] = service
+                flood_detection[ip_src]["services"].add(service)
 
-        # Check if IP is whitelisted and exceeds the whitelisted flood threshold
         if WhiteList.objects.filter(ip=ip_src).exists():
             if flood_detection[ip_src]["count"] > WHITELISTED_FLOOD_THRESHOLD:
                 if current_time - flood_detection[ip_src]["last_logged"] > SUSPICIOUS_LOG_INTERVAL:
@@ -144,17 +130,13 @@ def packet_callback(packet):
                     save_log(f"Suspicious {service} flood activity detected", ip_src, service)
                     flood_detection[ip_src]["last_logged"] = current_time
         else:
-            # If an attack is detected for non-whitelisted IP
             if flood_detection[ip_src]["count"] > FLOOD_THRESHOLD:
-                # Check if log for this flood attack has been recorded within a certain interval
                 if current_time - flood_detection[ip_src]["last_logged"] > LOG_INTERVAL:
                     logging.info(f"{service} Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
                     save_log(f"{service} Flood attack detected", ip_src, service)
                     flood_detection[ip_src]["last_logged"] = current_time
-                
-                block_ip(ip_src, flood_detection[ip_src]["service"])
-                # Reset count and service after blocking
-                flood_detection[ip_src] = {"count": 0, "time": 0, "last_logged": flood_detection[ip_src]["last_logged"], "service": None}
+                    block_ip(ip_src, service)
+                    flood_detection[ip_src] = {"count": 0, "time": 0, "last_logged": flood_detection[ip_src]["last_logged"], "services": flood_detection[ip_src]["services"]}
 
 def monitor_ssh_log():
     ssh_logfile = "/var/log/auth.log"
@@ -166,7 +148,7 @@ def monitor_ssh_log():
             port = None
             protocol = None
 
-            logging.debug(f"SSH log line: {line.strip()}")  # Debug log for SSH line
+            logging.debug(f"SSH log line: {line.strip()}")
 
             if "Failed password" in line:
                 ip = line.split()[-4]
@@ -175,7 +157,6 @@ def monitor_ssh_log():
                 protocol = "SSH"
                 logging.debug(f"Detected failed password attempt from {ip} to {user} using port {port}")
                 if WhiteList.objects.filter(ip=ip).exists():
-                    # Log suspicious activity for whitelisted IP
                     ssh_brute_force[ip]["count"] += 1
                     if ssh_brute_force[ip]["count"] > WHITELISTED_SSH_THRESHOLD:
                         if time.time() - ssh_brute_force[ip]["last_logged"] > SUSPICIOUS_LOG_INTERVAL:
@@ -202,18 +183,19 @@ def main():
     logging.info("Starting packet capture and SSH log monitoring.")
     try:
         restore_iptables_rules()
-        sniff(prn=packet_callback, store=0)
-    except KeyboardInterrupt:
-        logging.info("Packet capture stopped.")
+        sniff_thread = threading.Thread(target=lambda: sniff(prn=packet_callback, store=0))
+        sniff_thread.start()
+        monitor_ssh_log()
+    except Exception as e:
+        logging.error(f"Error in main function: {str(e)}")
+    finally:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.pause()
 
 def signal_handler(sig, frame):
-    logging.info("Stopping IDPS...")
-    restore_iptables_rules()
+    logging.info("Exiting and saving iptables rules.")
+    save_iptables_rules()
     sys.exit(0)
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    threading.Thread(target=monitor_ssh_log, daemon=True).start()
     main()

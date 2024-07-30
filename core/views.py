@@ -24,13 +24,13 @@ def ip_already_blocked(ip,service):
 def IDPSAction(ip, service, action, group):
     if service == "all":
         return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip,  "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "tcpip":
+    elif service == "TCP":
         return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "udp":
+    elif service == "UDP":
         return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "udp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "icmp":
+    elif service == "ICMP":
         return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "icmp", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    elif service == "sshd":
+    elif service == "SSH":
         return subprocess.check_call(["sudo", "iptables", action, "INPUT", "-s", ip, "-p", "tcp", "--dport", "22", "-j", group],stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     else:
         pass
