@@ -33,7 +33,7 @@ class SSHSuccess(models.Model):
     id_idpslog = models.ForeignKey(IDPSLog, on_delete=models.CASCADE) 
     tanggal = models.DateField(auto_now_add=True)
     waktu = models.TimeField(auto_now_add=True)
-    protocol = models.CharField(max_length=100)
+    service = models.CharField(max_length=100)
     user_login = models.CharField(max_length=50)
     port = models.CharField(max_length=10)
     ip = models.GenericIPAddressField()

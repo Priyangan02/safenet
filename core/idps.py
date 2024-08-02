@@ -9,6 +9,7 @@ from scapy.all import sniff, IP, TCP, UDP, ICMP
 import django
 from django.conf import settings
 import os
+from bot import send_telegram_message
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'safenet.settings')
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
@@ -84,6 +85,7 @@ def block_ip(ip, service):
 
         logger.info(f"IP {ip} has been blocked for {service}.")
         save_log(f"IP {ip} has been blocked for {service}.", ip, service)
+        send_telegram_message(f"IP {ip} has been blocked for {service}.")
         save_blocked_ip(ip, service)
         save_iptables_rules()
     except subprocess.CalledProcessError as e:
@@ -132,12 +134,14 @@ def packet_callback(packet):
             if flood_detection[ip_src]["count"] > WHITELISTED_FLOOD_THRESHOLD:
                 if current_time - flood_detection[ip_src]["last_logged"] > SUSPICIOUS_LOG_INTERVAL:
                     logger.info(f"Suspicious {service} flood activity detected from whitelisted IP {ip_src}. TTL: {ttl}, ToS: {tos}")
+                    send_telegram_message(f"Suspicious {service} flood activity detected from whitelisted IP {ip_src}.")
                     save_log(f"Suspicious {service} flood activity detected", ip_src, service)
                     flood_detection[ip_src]["last_logged"] = current_time
         else:
             if flood_detection[ip_src]["count"] > FLOOD_THRESHOLD:
                 if current_time - flood_detection[ip_src]["last_logged"] > LOG_INTERVAL:
                     logger.info(f"{service} Flood attack detected from {ip_src}. TTL: {ttl}, ToS: {tos}")
+                    send_telegram_message(f"{service} Flood attack detected from {ip_src}.")
                     save_log(f"{service} Flood attack detected", ip_src, service)
                     flood_detection[ip_src]["last_logged"] = current_time
                     block_ip(ip_src, service)
@@ -166,22 +170,25 @@ def monitor_ssh_log():
                     if ssh_brute_force[ip]["count"] > WHITELISTED_SSH_THRESHOLD:
                         if time.time() - ssh_brute_force[ip]["last_logged"] > SUSPICIOUS_LOG_INTERVAL:
                             logger.info(f"Suspicious Failed SSH login attempts from whitelisted IP {ip} to {user} using port {port}.")
+                            send_telegram_message(f"Suspicious Failed SSH login attempts from whitelisted IP {ip} to {user} using port {port}.")
                             save_log(f"Suspicious Failed SSH login attempts from whitelisted IP {ip}", ip, service)
                             ssh_brute_force[ip]["last_logged"] = time.time()
                     continue
                 ssh_brute_force[ip]["count"] += 1
                 if ssh_brute_force[ip]["count"] > SSH_BRUTE_FORCE_THRESHOLD:
                     logger.info(f"SSH Brute Force attack detected from {ip} to {user} using port {port}.")
+                    send_telegram_message(f"SSH Brute Force attack detected from {ip} to {user} using port {port}.")
                     save_log(f"SSH Brute Force attack detected", ip, service)
                     block_ip(ip, "SSH")
                     ssh_brute_force[ip]["count"] = 0
                     ssh_brute_force[ip]["last_logged"] = time.time()
             elif "Accepted password" in line:
                 ip = line.split()[-4]
-                user = line.split()[-8]
-                port = line.split()[-6]
+                user = line.split()[-6]
+                port = line.split()[-2]
                 service = "SSH"
                 logger.info(f"Successful SSH login from {ip} to {user} using port {port}.")
+                send_telegram_message(f"Successful SSH login from {ip} to {user} using port {port}.")
                 save_successful_login(ip, user, port, service)
 
 def main():

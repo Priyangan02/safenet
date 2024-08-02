@@ -1,6 +1,6 @@
 import telebot
 
-def send_telegram_message( message):
+def send_telegram_message(message):
     # Membuat objek bot
     token = '7348981254:AAF2_e38Oe0Zo2x8xEldtLqXTipP9pZyp1k'
     chat_id = '1406910249'
@@ -16,6 +16,6 @@ def send_telegram_message( message):
 # Contoh penggunaan fungsi
 if __name__ == "__main__":
 
-    MESSAGE = 'WOY ALAN'
+    MESSAGE = 'TEST MESSAGE'
     
     send_telegram_message(MESSAGE)
