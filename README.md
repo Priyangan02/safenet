@@ -1,8 +1,8 @@
-**SafeNet: Intrusion Detection and Prevention System (IDPS)**
+# **SafeNet: Intrusion Detection and Prevention System (IDPS)**
 
 SafeNet adalah aplikasi Intrusion Detection and Prevention System (IDPS) yang dibangun menggunakan Python dan Django. Aplikasi ini dirancang untuk mendeteksi dan mencegah berbagai jenis serangan jaringan seperti brute force SSH, TCP flood, UDP flood, dan ICMP flood. Selain itu, SafeNet juga terintegrasi dengan Telegram untuk memberikan notifikasi real-time.
 
-**Fitur Utama**
+## **Fitur Utama**
 
 **Deteksi Brute Force SSH**: Mendeteksi percobaan login SSH yang gagal dan memblokir IP yang mencurigakan.
 
@@ -18,28 +18,28 @@ SafeNet adalah aplikasi Intrusion Detection and Prevention System (IDPS) yang di
 
 **Persyaratan Sistem**
 
-Python 3.x
+* Python 3.x
 
-Scapy
+* Scapy
 
-Django 3.x atau lebih baru
+* Django 3.x atau lebih baru
 
-Ubuntu OS (atau sistem berbasis Linux lainnya)
+* Ubuntu OS (atau sistem berbasis Linux lainnya)
 
-Akun Telegram dan bot token untuk notifikasi
+* Akun Telegram dan bot token untuk notifikasi
 
-**Penggunaan**
+## **Penggunaan**
 
-**Home**: Menampilkan log dari IDPS.
+* **Home**: Menampilkan log dari IDPS.
 
-**Config**: Mengaktifkan/menonaktifkan IDPS dan mengatur ambang batas untuk serangan flood dan percobaan login SSH gagal.
+* **Config**: Mengaktifkan/menonaktifkan IDPS dan mengatur ambang batas untuk serangan flood dan percobaan login SSH gagal.
 
-**SSH Success**: Menampilkan log dari login SSH yang berhasil.
+* **SSH Success**: Menampilkan log dari login SSH yang berhasil.
 
-**Banned IP**: Mengelola IP yang diblokir oleh IDPS.
+* **Banned IP**: Mengelola IP yang diblokir oleh IDPS.
 
-**Whitelist**: Menambahkan IP yang akan dilewati pemeriksaan IDPS tetapi tetap log aktivitas mencurigakan jika melebihi ambang batas.
+* **Whitelist**: Menambahkan IP yang akan dilewati pemeriksaan IDPS tetapi tetap log aktivitas mencurigakan jika melebihi ambang batas.
 
-**Kontak**
+## **Kontak**
 
 Untuk pertanyaan atau dukungan lebih lanjut, silakan hubungi priyantoalansyah18@gmail.com.
