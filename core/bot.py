@@ -2,8 +2,8 @@ import telebot
 
 def send_telegram_message(message):
     # Membuat objek bot
-    token = '7348981254:AAF2_e38Oe0Zo2x8xEldtLqXTipP9pZyp1k'
-    chat_id = '1406910249'
+    token = 'CHATBOT_TOKEN'
+    chat_id = 'CHATID_BOT_TELEGRAM'
     bot = telebot.TeleBot(token)
 
     try:
